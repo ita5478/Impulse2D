@@ -63,7 +63,7 @@ solve velocities (iterated) → integrate velocities → correct positions (iter
 - [ ] PolygonVsPolygon (SAT + clipped 2-point manifold)
 - [ ] Tests: `tests/.../CollisionDetectorTests.cs`
 - Files owned: `src/PhysicsEngine/Collision/CollisionDetector.cs` (+ optional helpers in `Collision/`), test file.
-- Status: ⬜
+- Status: 🟡 dispatched (worktree `physics-wt-collision`, branch `collision`)
 
 #### T2 — Integrator + collision response · agent `dynamics-solver` · `progress/dynamics-solver.md`
 - [ ] Integrator: IntegrateForces (gravity, forces, torque), IntegrateVelocity (+ damping)
@@ -71,14 +71,14 @@ solve velocities (iterated) → integrate velocities → correct positions (iter
 - [ ] CorrectPositions (Baumgarte, slop)
 - [ ] Tests: `tests/.../SolverTests.cs`, `tests/.../IntegratorTests.cs`
 - Files owned: `src/PhysicsEngine/Dynamics/Solver/Integrator.cs`, `.../CollisionResolver.cs`, test files.
-- Status: ⬜
+- Status: 🟡 dispatched (worktree `physics-wt-solver`, branch `solver`)
 
 #### T3 — Broad phase (fast) · agent `broadphase` · `progress/broadphase.md`
 - [ ] SpatialHashBroadPhase (uniform grid)
 - [ ] SweepAndPruneBroadPhase (sort on one axis)
 - [ ] Tests vs BruteForce oracle: `tests/.../BroadPhaseTests.cs`
 - Files owned: `src/PhysicsEngine/Collision/BroadPhase/SpatialHashBroadPhase.cs`, `.../SweepAndPruneBroadPhase.cs`, test file.
-- Status: ⬜
+- Status: 🟡 dispatched (worktree `physics-wt-broadphase`, branch `broadphase`)
 
 #### T4 — Force generators · agent `forces` · `progress/forces.md`
 - [ ] DirectionalGravityGenerator, DragGenerator (linear+quadratic)
@@ -86,7 +86,7 @@ solve velocities (iterated) → integrate velocities → correct positions (iter
 - [ ] PointGravityGenerator (attractor), BuoyancyGenerator, WindGenerator
 - [ ] Tests: `tests/.../ForceGeneratorTests.cs`
 - Files owned: `src/PhysicsEngine/Forces/*.cs` (new files), test file.
-- Status: ⬜
+- Status: 🟡 dispatched (worktree `physics-wt-forces`, branch `forces`)
 
 #### T5 — Visual demo + scenarios · agent `demo` · `progress/demo.md`
 - [ ] Raylib renderer (circles, polygons, contacts, HUD), world→screen camera
