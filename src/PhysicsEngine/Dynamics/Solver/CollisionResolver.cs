@@ -131,10 +131,12 @@ public static class CollisionResolver
         if (a.InverseMass == 0f && b.InverseMass == 0f)
             return;
 
-        if (m.ContactCount == 0)
+        int count = m.ContactCount;
+        if (count == 0)
             return;
 
         Vector2 n = m.Normal;
+        Vector2 tangent = new Vector2(-n.Y, n.X);
 
         // Mixed material properties. Prepare() caches these; fall back to computing them so a
         // direct ResolveVelocity call (e.g. unit tests) without Prepare still behaves.
@@ -147,85 +149,177 @@ public static class CollisionResolver
             ? m.MixedDynamicFriction
             : MathF.Sqrt(a.DynamicFriction * b.DynamicFriction);
 
-        int count = m.ContactCount;
+        Vector2 rA0 = m.Contact0 - a.WorldCenter, rB0 = m.Contact0 - b.WorldCenter;
+        Vector2 rA1 = count > 1 ? m.Contact1 - a.WorldCenter : default;
+        Vector2 rB1 = count > 1 ? m.Contact1 - b.WorldCenter : default;
 
-        for (int i = 0; i < count; i++)
+        // --- Normal impulses ---
+        // For a 2-point manifold (e.g. a box resting flat) solve both normal constraints
+        // SIMULTANEOUSLY with a 2x2 block solver. Solving them sequentially imparts a net
+        // torque from the asymmetric per-contact impulses, which tumbles stacked boxes
+        // (they rotate toward ±pi) and throws them sideways — that was BUG-2. The block
+        // solver removes that coupling; it falls back to the sequential solve when the 2x2
+        // system is ill-conditioned (near-parallel constraints).
+        if (count == 2 && TrySolveNormalBlock(ref m, a, b, n, rA0, rB0, rA1, rB1, settings, e))
         {
-            Vector2 contact = m.GetContact(i);
-            Vector2 rA = contact - a.WorldCenter;
-            Vector2 rB = contact - b.WorldCenter;
-
-            // --- Normal impulse ---
-            Vector2 rv = (b.LinearVelocity + Vector2.Cross(b.AngularVelocity, rB))
-                       - (a.LinearVelocity + Vector2.Cross(a.AngularVelocity, rA));
-            float velAlongNormal = Vector2.Dot(rv, n);
-
-            float rACrossN = Vector2.Cross(rA, n);
-            float rBCrossN = Vector2.Cross(rB, n);
-            float invMassSum = a.InverseMass + b.InverseMass
-                             + a.InverseInertia * rACrossN * rACrossN
-                             + b.InverseInertia * rBCrossN * rBCrossN;
-
-            if (invMassSum <= 0f)
-                continue;
-
-            // Restitution target: prefer the bias captured at Prepare time; if Prepare was not
-            // run (bias == 0 and approaching fast), fall back to the live approach velocity.
-            float restBias = i == 0 ? m.RestitutionBias0 : m.RestitutionBias1;
-            if (restBias == 0f && velAlongNormal < -settings.RestitutionVelocityThreshold)
-                restBias = -e * velAlongNormal;
-
-            // Incremental normal impulse aiming at velAlongNormal == restBias (separation).
-            float deltaJ = -(velAlongNormal - restBias) / invMassSum;
-
-            // Clamp the ACCUMULATED normal impulse to >= 0; apply only the change.
-            float oldAccum = i == 0 ? m.NormalImpulse0 : m.NormalImpulse1;
-            float newAccum = MathF.Max(oldAccum + deltaJ, 0f);
-            deltaJ = newAccum - oldAccum;
-            if (i == 0) m.NormalImpulse0 = newAccum; else m.NormalImpulse1 = newAccum;
-
-            Vector2 jn = n * deltaJ;
-            a.ApplyImpulse(-jn, rA);
-            b.ApplyImpulse(jn, rB);
-
-            // --- Friction (Coulomb), accumulated tangent impulse ---
-            rv = (b.LinearVelocity + Vector2.Cross(b.AngularVelocity, rB))
-               - (a.LinearVelocity + Vector2.Cross(a.AngularVelocity, rA));
-
-            // Fixed geometric tangent (normal rotated 90°), so the ACCUMULATED tangent impulse
-            // has a stable direction across iterations and across steps (required for consistent
-            // warm-starting and for the Coulomb clamp on the accumulated value to be meaningful).
-            Vector2 tangent = new Vector2(-n.Y, n.X);
-
-            float rACrossT = Vector2.Cross(rA, tangent);
-            float rBCrossT = Vector2.Cross(rB, tangent);
-            float invMassSumT = a.InverseMass + b.InverseMass
-                              + a.InverseInertia * rACrossT * rACrossT
-                              + b.InverseInertia * rBCrossT * rBCrossT;
-
-            if (invMassSumT <= 0f)
-                continue;
-
-            float deltaJt = -Vector2.Dot(rv, tangent) / invMassSumT;
-
-            // Coulomb clamp on the ACCUMULATED tangent impulse, bounded by the accumulated
-            // normal impulse. Within the static cone (|t| <= sf*N) friction holds fully;
-            // beyond it the contact slides and friction saturates at the dynamic limit
-            // df*N. Clamping the accumulated total (not the delta) is what anchors a stack
-            // against lateral drift (BUG-2).
-            float oldT = i == 0 ? m.TangentImpulse0 : m.TangentImpulse1;
-            float newT = oldT + deltaJt;
-            float staticLimit = sf * newAccum;
-            float dynamicLimit = df * newAccum;
-            if (newT > staticLimit) newT = dynamicLimit;
-            else if (newT < -staticLimit) newT = -dynamicLimit;
-            deltaJt = newT - oldT;
-            if (i == 0) m.TangentImpulse0 = newT; else m.TangentImpulse1 = newT;
-
-            Vector2 frictionImpulse = tangent * deltaJt;
-            a.ApplyImpulse(-frictionImpulse, rA);
-            b.ApplyImpulse(frictionImpulse, rB);
+            // block solver applied both normal impulses
         }
+        else
+        {
+            SolveNormalContact(ref m, a, b, n, 0, rA0, rB0, settings, e);
+            if (count > 1)
+                SolveNormalContact(ref m, a, b, n, 1, rA1, rB1, settings, e);
+        }
+
+        // --- Friction (Coulomb), per contact, bounded by that contact's accumulated normal ---
+        SolveFrictionContact(ref m, a, b, tangent, 0, rA0, rB0, m.NormalImpulse0, sf, df);
+        if (count > 1)
+            SolveFrictionContact(ref m, a, b, tangent, 1, rA1, rB1, m.NormalImpulse1, sf, df);
+    }
+
+    private static Vector2 RelativeVelocity(RigidBody a, RigidBody b, Vector2 rA, Vector2 rB)
+        => (b.LinearVelocity + Vector2.Cross(b.AngularVelocity, rB))
+         - (a.LinearVelocity + Vector2.Cross(a.AngularVelocity, rA));
+
+    /// <summary>Sequential single-contact normal impulse with accumulation clamped to >= 0.</summary>
+    private static void SolveNormalContact(ref Manifold m, RigidBody a, RigidBody b, Vector2 n,
+        int i, Vector2 rA, Vector2 rB, in WorldSettings settings, float e)
+    {
+        float vn = Vector2.Dot(RelativeVelocity(a, b, rA, rB), n);
+        float rAn = Vector2.Cross(rA, n);
+        float rBn = Vector2.Cross(rB, n);
+        float invMassSum = a.InverseMass + b.InverseMass
+                         + a.InverseInertia * rAn * rAn + b.InverseInertia * rBn * rBn;
+        if (invMassSum <= 0f)
+            return;
+
+        float restBias = i == 0 ? m.RestitutionBias0 : m.RestitutionBias1;
+        if (restBias == 0f && vn < -settings.RestitutionVelocityThreshold)
+            restBias = -e * vn;
+
+        float deltaJ = -(vn - restBias) / invMassSum;
+        float old = i == 0 ? m.NormalImpulse0 : m.NormalImpulse1;
+        float nw = MathF.Max(old + deltaJ, 0f);
+        deltaJ = nw - old;
+        if (i == 0) m.NormalImpulse0 = nw; else m.NormalImpulse1 = nw;
+
+        Vector2 jn = n * deltaJ;
+        a.ApplyImpulse(-jn, rA);
+        b.ApplyImpulse(jn, rB);
+    }
+
+    /// <summary>
+    /// Box2D-style 2x2 block solver for the two normal constraints of a 2-point manifold.
+    /// Returns false (without applying anything) when the system is ill-conditioned so the
+    /// caller can fall back to the sequential solve.
+    /// </summary>
+    private static bool TrySolveNormalBlock(ref Manifold m, RigidBody a, RigidBody b, Vector2 n,
+        Vector2 rA0, Vector2 rB0, Vector2 rA1, Vector2 rB1, in WorldSettings settings, float e)
+    {
+        float rA0n = Vector2.Cross(rA0, n), rB0n = Vector2.Cross(rB0, n);
+        float rA1n = Vector2.Cross(rA1, n), rB1n = Vector2.Cross(rB1, n);
+        float mab = a.InverseMass + b.InverseMass;
+        float k11 = mab + a.InverseInertia * rA0n * rA0n + b.InverseInertia * rB0n * rB0n;
+        float k22 = mab + a.InverseInertia * rA1n * rA1n + b.InverseInertia * rB1n * rB1n;
+        float k12 = mab + a.InverseInertia * rA0n * rA1n + b.InverseInertia * rB0n * rB1n;
+
+        float det = k11 * k22 - k12 * k12;
+        // Conditioning test (Box2D): also rejects det <= 0.
+        if (!(k11 * k11 < 1000f * det))
+            return false;
+
+        float vn0 = Vector2.Dot(RelativeVelocity(a, b, rA0, rB0), n);
+        float vn1 = Vector2.Dot(RelativeVelocity(a, b, rA1, rB1), n);
+
+        float a0 = m.NormalImpulse0, a1 = m.NormalImpulse1;
+        // b = (vn - restitutionBias) - A * accumulated
+        float bx = (vn0 - m.RestitutionBias0) - (k11 * a0 + k12 * a1);
+        float by = (vn1 - m.RestitutionBias1) - (k12 * a0 + k22 * a1);
+
+        float x0, x1;
+
+        // Case 1: both contacts active. x = -A^-1 b.
+        x0 = (k12 * by - k22 * bx) / det;
+        x1 = (k12 * bx - k11 * by) / det;
+        if (x0 >= 0f && x1 >= 0f)
+        {
+            ApplyBlock(ref m, a, b, n, rA0, rB0, rA1, rB1, x0, x1);
+            return true;
+        }
+
+        // Case 2: contact 0 only.
+        x0 = -bx / k11; x1 = 0f;
+        if (x0 >= 0f && (k12 * x0 + by) >= 0f)
+        {
+            ApplyBlock(ref m, a, b, n, rA0, rB0, rA1, rB1, x0, x1);
+            return true;
+        }
+
+        // Case 3: contact 1 only.
+        x0 = 0f; x1 = -by / k22;
+        if (x1 >= 0f && (k12 * x1 + bx) >= 0f)
+        {
+            ApplyBlock(ref m, a, b, n, rA0, rB0, rA1, rB1, x0, x1);
+            return true;
+        }
+
+        // Case 4: neither contact active (both separating).
+        if (bx >= 0f && by >= 0f)
+        {
+            ApplyBlock(ref m, a, b, n, rA0, rB0, rA1, rB1, 0f, 0f);
+            return true;
+        }
+
+        // No consistent solution found (degenerate) — fall back to sequential.
+        return false;
+    }
+
+    /// <summary>Apply the block solution: set accumulated impulses to (x0,x1) and push the deltas.</summary>
+    private static void ApplyBlock(ref Manifold m, RigidBody a, RigidBody b, Vector2 n,
+        Vector2 rA0, Vector2 rB0, Vector2 rA1, Vector2 rB1, float x0, float x1)
+    {
+        float d0 = x0 - m.NormalImpulse0;
+        float d1 = x1 - m.NormalImpulse1;
+        m.NormalImpulse0 = x0;
+        m.NormalImpulse1 = x1;
+
+        Vector2 p0 = n * d0;
+        a.ApplyImpulse(-p0, rA0);
+        b.ApplyImpulse(p0, rB0);
+
+        Vector2 p1 = n * d1;
+        a.ApplyImpulse(-p1, rA1);
+        b.ApplyImpulse(p1, rB1);
+    }
+
+    /// <summary>Per-contact Coulomb friction with the accumulated tangent impulse clamped by N.</summary>
+    private static void SolveFrictionContact(ref Manifold m, RigidBody a, RigidBody b, Vector2 tangent,
+        int i, Vector2 rA, Vector2 rB, float normalAccum, float sf, float df)
+    {
+        float rAt = Vector2.Cross(rA, tangent);
+        float rBt = Vector2.Cross(rB, tangent);
+        float invMassSumT = a.InverseMass + b.InverseMass
+                          + a.InverseInertia * rAt * rAt + b.InverseInertia * rBt * rBt;
+        if (invMassSumT <= 0f)
+            return;
+
+        float deltaJt = -Vector2.Dot(RelativeVelocity(a, b, rA, rB), tangent) / invMassSumT;
+
+        // Coulomb clamp on the ACCUMULATED tangent impulse, bounded by the accumulated normal
+        // impulse: inside the static cone friction holds fully, beyond it the contact slides and
+        // friction saturates at the dynamic limit. Clamping the accumulated total (not the delta)
+        // is what anchors a stack laterally.
+        float oldT = i == 0 ? m.TangentImpulse0 : m.TangentImpulse1;
+        float newT = oldT + deltaJt;
+        float staticLimit = sf * normalAccum;
+        if (newT > staticLimit) newT = df * normalAccum;
+        else if (newT < -staticLimit) newT = -df * normalAccum;
+        deltaJt = newT - oldT;
+        if (i == 0) m.TangentImpulse0 = newT; else m.TangentImpulse1 = newT;
+
+        Vector2 frictionImpulse = tangent * deltaJt;
+        a.ApplyImpulse(-frictionImpulse, rA);
+        b.ApplyImpulse(frictionImpulse, rB);
     }
 
     /// <summary>
