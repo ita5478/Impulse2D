@@ -9,6 +9,23 @@ Test suite status: **GREEN** — `dotnet test` → 112 passed, **7 skipped (one 
 0 failed. Each skipped test preserves the failing assertion and is tagged `BUG-n` so a fixer
 can un-skip and verify.
 
+> ## ✅ RESOLUTION (2026-06-20) — ALL 7 BUGS FIXED
+> Every BUG below has been fixed and its stress test un-skipped. Final suite: **119 passed,
+> 0 skipped, 0 failed.**
+> - **BUG-1/3** (deep-overlap explosion, heavy-on-light ejection): `WorldSettings.MaxCorrection`
+>   (clamped Baumgarte) + `WorldSettings.MaxLinearVelocity` cap.
+> - **BUG-2** (stack tumble/drift): **2-point block solver** in `CollisionResolver` (solves both
+>   contacts simultaneously) + accumulated-impulse friction. Verified: a 10-box stack holds at
+>   max|x|≈0, max rotation≈0 over 20 s.
+> - **BUG-4** (restitution energy loss): restitution bias captured from initial approach velocity
+>   in `Prepare`; mixed by **max**; threshold floored at `g·dt`.
+> - **BUG-5** (fast tunnelling): `MaxLinearVelocity` clamp (CCD still future work).
+> - **BUG-6** (degenerate-polygon NaN): zero-area guard in `PolygonShape.ComputeMass`.
+> - **BUG-7** (avg vs deepest penetration): `PolygonVsPolygon` now reports the deepest contact depth.
+>
+> Original user repro (rapid same-point circle spawns) re-verified: 15 circles pile up and settle
+> at max speed 1.7 m/s, no tunnelling, no NaN.
+
 Conventions confirmed from source: Y grows DOWNWARD; default gravity `(0, +9.81)`; fixed
 timestep via `World.Step(dt)`; step pipeline is forces → integrate-forces → broad/narrow phase
 → iterated velocity solve → integrate-velocity → iterated positional correction → clear forces

@@ -106,7 +106,29 @@ solve velocities (iterated) → integrate velocities → correct positions (iter
 
 ---
 
+## Phase 3 — Hardening QA + fixes + documentation (2026-06-20) ✅
+Triggered by a user-reported edge case (rapid same-point spawns behaving oddly).
+
+### QA challenge (agent `qa`) ✅
+- [x] Adversarial stress suite `tests/.../StressTests.cs` + `QA_REPORT.md` — found 7 issues (BUG-1..7).
+
+### Fixes (parallel agents in worktrees + orchestrator) ✅
+- [x] BUG-1/3 — clamped positional correction (`WorldSettings.MaxCorrection`) + `MaxLinearVelocity` cap.
+- [x] BUG-4 — restitution bias captured in `Prepare`; restitution mixed by **max**; threshold floored at `g·dt`.
+- [x] BUG-5 — `MaxLinearVelocity` clamp mitigates fast tunnelling (CCD = future work).
+- [x] BUG-6 — degenerate-polygon NaN guard in `PolygonShape.ComputeMass`.
+- [x] BUG-7 — `PolygonVsPolygon` reports deepest (not average) penetration.
+- [x] BUG-2 — **2-point block solver** in `CollisionResolver` eliminates stack tumble/drift (orchestrator finished after solver agent hit session limit).
+- [x] Accumulated-impulse solver + optional cross-frame warm-starting (`World`, `Manifold`).
+- [x] Full suite green: **119 passed, 0 skipped**. Original repro re-verified bounded.
+
+### Documentation ✅
+- [x] Agent reference `docs/AGENT_REFERENCE.md` (compact, code-linked) — reconciled with solver fixes.
+- [x] Docusaurus site `website/` (30 pages, `npm run build` clean) — reconciled with solver fixes.
+
+---
+
 ## Resume notes
-If interrupted: re-read this board + each `progress/*.md`. Foundation is committed and
-builds. Remaining work is the unchecked boxes above. The solution must always compile —
-agents replace stub method bodies; they do not change public signatures.
+If interrupted: re-read this board + each `progress/*.md` + `QA_REPORT.md`. Everything is
+committed and builds. `dotnet test PhysicsEngine.sln` must stay green (119 tests); the demo
+runs windowed or `--headless`. Docs live in `docs/AGENT_REFERENCE.md` and `website/`.
