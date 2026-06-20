@@ -35,8 +35,11 @@ set of force generators (gravity, drag, springs, attractors, buoyancy, wind).
   `IgnoreGravity` flag.
 - **Collision detection** — circle/circle, circle/polygon and polygon/polygon via SAT
   with incident-edge clipping (1–2 contact manifolds).
-- **Solver** — iterated impulse resolution with rotational terms, restitution (with
-  resting-jitter suppression), Coulomb friction and Baumgarte positional correction.
+- **Solver** — iterated impulse resolution with rotational terms, a 2-point block solver
+  for stable stacks, restitution (with resting-jitter suppression), Coulomb friction and
+  Baumgarte positional correction.
+- **Continuous collision detection** — adaptive sub-stepping that keeps fast bodies from
+  tunnelling through thin geometry; on by default with no cost for slow scenes.
 - **Broad phase** — brute force (the default and reference oracle), a uniform spatial
   hash, and sweep-and-prune. All three are interchangeable through `IBroadPhase`.
 - **Forces** — directional gravity, linear + quadratic drag, springs (body-body and

@@ -43,4 +43,28 @@ public sealed class WorldSettings
 
     /// <summary>Fraction of the previous step's normal impulse re-applied when warm-starting.</summary>
     public float WarmStartFactor = 1.0f;
+
+    // --- Continuous collision detection (anti-tunnelling) ---
+
+    /// <summary>
+    /// When true, <see cref="World.Step"/> adaptively subdivides the timestep so that no
+    /// dynamic body moves more than a fraction of its own size per sub-step (see
+    /// <see cref="CcdMotionThreshold"/>). This stops fast bodies from tunnelling through thin
+    /// geometry. Slow scenes run a single sub-step, so there is no cost when nothing moves fast.
+    /// </summary>
+    public bool ContinuousCollisionDetection = true;
+
+    /// <summary>
+    /// Sub-step trigger: the largest fraction of a body's <see cref="Shape.BoundingRadius"/> it
+    /// may travel in one sub-step before the step is subdivided. Smaller = safer but more
+    /// sub-steps. 0.5 means "never move more than half your radius per sub-step".
+    /// </summary>
+    public float CcdMotionThreshold = 0.5f;
+
+    /// <summary>
+    /// Hard cap on the number of CCD sub-steps per <see cref="World.Step"/> call, bounding the
+    /// worst-case cost. A body fast enough to need more sub-steps than this can still tunnel —
+    /// raise the cap (or lower <see cref="MaxLinearVelocity"/>) for extreme speeds.
+    /// </summary>
+    public int MaxSubSteps = 8;
 }

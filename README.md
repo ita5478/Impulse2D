@@ -65,6 +65,7 @@ world.BroadPhase = new SpatialHashBroadPhase(cellSize: 2f); // or SweepAndPruneB
 - **Bodies:** `Static` / `Dynamic` / `Kinematic`; materials with density, restitution, static & dynamic friction; per-body damping; `IgnoreGravity`.
 - **Collision detection:** circle/circle, circle/polygon, polygon/polygon via SAT with incident-edge clipping (1–2 contact manifolds).
 - **Solver:** iterated impulse resolution with rotational terms, restitution (with resting-jitter suppression), Coulomb friction, and Baumgarte positional correction.
+- **Continuous collision detection:** adaptive sub-stepping that stops fast bodies tunnelling through thin geometry (on by default, zero cost for slow scenes).
 - **Broad phase:** brute force (reference/oracle), uniform spatial hash, sweep-and-prune.
 - **Forces:** directional gravity, linear+quadratic drag, springs (body-body and anchored), inverse-square point attractor, buoyancy, wind.
 
@@ -82,9 +83,13 @@ dotnet run --project demo/PhysicsEngine.Demo -- --headless list    # list demo s
 - Fixed-timestep `World.Step(dt)`; call it at a constant `dt` (e.g. `1/60`).
 - The solver is a sequential-impulse ("Box2D-lite"-style) solver with accumulated impulses
   and a 2-point block solver, so box stacks stay stable. Deep spawn-overlaps are bounded by
-  `WorldSettings.MaxCorrection` / `MaxLinearVelocity`. There is still **no continuous
-  collision detection**, so extremely fast bodies can tunnel through thin geometry — keep
-  `dt` small, shapes thick, or `MaxLinearVelocity` low for high-speed objects.
+  `WorldSettings.MaxCorrection` / `MaxLinearVelocity`.
+- **Continuous collision detection (anti-tunnelling)** is built in and **on by default**:
+  `World.Step` adaptively subdivides the timestep so no body moves more than a fraction of its
+  size per sub-step (`WorldSettings.CcdMotionThreshold`), capped at `MaxSubSteps`. Slow scenes
+  run a single sub-step (no overhead). A body fast enough to exceed `MaxSubSteps` sub-steps can
+  still tunnel — raise that cap or lower `MaxLinearVelocity` for extreme speeds. This is
+  sub-step CCD, not full swept-shape time-of-impact.
 
 ## Project layout & history
 See [PLAN.md](PLAN.md) for the full task breakdown and module ownership. The engine was

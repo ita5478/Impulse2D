@@ -128,6 +128,18 @@ Triggered by a user-reported edge case (rapid same-point spawns behaving oddly).
 
 ---
 
+## Phase 4 — Continuous collision detection (branch `feature/ccd`) ✅
+- [x] Adaptive sub-stepping in `World.Step`: subdivides so no body moves > `CcdMotionThreshold`
+      of its radius per sub-step; `ComputeSubStepCount` clamped to `[1, MaxSubSteps]`; pipeline
+      extracted to `StepInternal`; `LastSubStepCount` exposed.
+- [x] `WorldSettings`: `ContinuousCollisionDetection` (default on), `CcdMotionThreshold` (0.5), `MaxSubSteps` (8).
+- [x] Tests `tests/.../ContinuousCollisionTests.cs` (8): anti-tunnelling vs thin wall (on vs off
+      contrast), sub-step counts, slow-scene bit-identical invariance, determinism, cap respected.
+- [x] Docs updated: README, `docs/AGENT_REFERENCE.md`, Docusaurus (overview, limitations, tuning, world API, bouncing-balls).
+- [x] Full suite green: **127 passed, 0 skipped**. Limitation: sub-step CCD, not swept-TOI.
+
+---
+
 ## Resume notes
 If interrupted: re-read this board + each `progress/*.md` + `QA_REPORT.md`. Everything is
 committed and builds. `dotnet test PhysicsEngine.sln` must stay green (119 tests); the demo
