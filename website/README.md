@@ -1,6 +1,6 @@
-# PhysicsEngine documentation site
+# Impulse2D documentation site
 
-The documentation website for the **PhysicsEngine** 2D physics library, built with
+The documentation website for the **Impulse2D** 2D physics library, built with
 [Docusaurus](https://docusaurus.io/).
 
 ## Prerequisites
@@ -43,5 +43,5 @@ npm run serve
   placeholder — replace `GITHUB_URL` with the real repository URL before publishing.
 - `src/` — homepage and theme customization.
 
-The docs are derived from the engine source under `../src/PhysicsEngine`. When the public
+The docs are derived from the engine source under `../src/Impulse2D`. When the public
 API changes, update the relevant page (and the API Reference tables) to match.

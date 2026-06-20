@@ -6,11 +6,11 @@ slug: /api-reference/overview
 
 # API reference
 
-All public types live in the single `PhysicsEngine` namespace. This reference documents
+All public types live in the single `Impulse2D` namespace. This reference documents
 the main public types and members, derived directly from the source.
 
 ```csharp
-using PhysicsEngine;
+using Impulse2D;
 ```
 
 ## Type index

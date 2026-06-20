@@ -10,7 +10,7 @@ A row of bodies linked by damped springs and hung from a fixed anchor — the en
 with `SpringGenerator` (to link neighbors).
 
 ```csharp
-using PhysicsEngine;
+using Impulse2D;
 
 var world = new World(new Vector2(0f, 9.81f));
 

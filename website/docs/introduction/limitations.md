@@ -5,7 +5,7 @@ title: Limitations
 
 # Limitations
 
-PhysicsEngine is intentionally small. Knowing where it stops will save you debugging
+Impulse2D is intentionally small. Knowing where it stops will save you debugging
 time.
 
 ## Continuous collision detection is sub-step based

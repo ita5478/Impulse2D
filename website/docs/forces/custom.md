@@ -25,7 +25,7 @@ changes. The world clears the force accumulators after each step.
 A force that pushes dynamic bodies upward while they are inside a horizontal band:
 
 ```csharp
-using PhysicsEngine;
+using Impulse2D;
 
 public sealed class UpdraftGenerator : IForceGenerator
 {

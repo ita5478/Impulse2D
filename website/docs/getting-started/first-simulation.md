@@ -10,7 +10,7 @@ that falls under gravity and comes to rest.
 
 ```csharp
 using System;
-using PhysicsEngine;
+using Impulse2D;
 
 class Program
 {

@@ -11,7 +11,7 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ❌ blocked
 ## Architecture overview
 
 ```
-src/PhysicsEngine/
+src/Impulse2D/
   Math/        Vector2, MathUtils, Transform            [FOUNDATION ✅]
   Geometry/    AABB                                     [FOUNDATION ✅]
   Shapes/      Shape, CircleShape, PolygonShape,        [FOUNDATION ✅]
@@ -24,8 +24,8 @@ src/PhysicsEngine/
   Forces/      IForceGenerator ✅, generators            [STUB → forces]
   WorldSettings, World (pipeline orchestration)         [FOUNDATION ✅]
 
-tests/PhysicsEngine.Tests/   xUnit, one file per module
-demo/PhysicsEngine.Demo/     Raylib-cs visual demo + headless scenario runner
+tests/Impulse2D.Tests/   xUnit, one file per module
+demo/Impulse2D.Demo/     Raylib-cs visual demo + headless scenario runner
 ```
 
 ### Step pipeline (implemented in `World.Step`)
@@ -62,7 +62,7 @@ solve velocities (iterated) → integrate velocities → correct positions (iter
 - [ ] CircleVsPolygon / PolygonVsCircle
 - [ ] PolygonVsPolygon (SAT + clipped 2-point manifold)
 - [ ] Tests: `tests/.../CollisionDetectorTests.cs`
-- Files owned: `src/PhysicsEngine/Collision/CollisionDetector.cs` (+ optional helpers in `Collision/`), test file.
+- Files owned: `src/Impulse2D/Collision/CollisionDetector.cs` (+ optional helpers in `Collision/`), test file.
 - Status: 🟡 dispatched (worktree `physics-wt-collision`, branch `collision`)
 
 #### T2 — Integrator + collision response · agent `dynamics-solver` · `progress/dynamics-solver.md`
@@ -70,14 +70,14 @@ solve velocities (iterated) → integrate velocities → correct positions (iter
 - [ ] ResolveVelocity (restitution + Coulomb friction, 2 contacts, angular terms)
 - [ ] CorrectPositions (Baumgarte, slop)
 - [ ] Tests: `tests/.../SolverTests.cs`, `tests/.../IntegratorTests.cs`
-- Files owned: `src/PhysicsEngine/Dynamics/Solver/Integrator.cs`, `.../CollisionResolver.cs`, test files.
+- Files owned: `src/Impulse2D/Dynamics/Solver/Integrator.cs`, `.../CollisionResolver.cs`, test files.
 - Status: 🟡 dispatched (worktree `physics-wt-solver`, branch `solver`)
 
 #### T3 — Broad phase (fast) · agent `broadphase` · `progress/broadphase.md`
 - [ ] SpatialHashBroadPhase (uniform grid)
 - [ ] SweepAndPruneBroadPhase (sort on one axis)
 - [ ] Tests vs BruteForce oracle: `tests/.../BroadPhaseTests.cs`
-- Files owned: `src/PhysicsEngine/Collision/BroadPhase/SpatialHashBroadPhase.cs`, `.../SweepAndPruneBroadPhase.cs`, test file.
+- Files owned: `src/Impulse2D/Collision/BroadPhase/SpatialHashBroadPhase.cs`, `.../SweepAndPruneBroadPhase.cs`, test file.
 - Status: 🟡 dispatched (worktree `physics-wt-broadphase`, branch `broadphase`)
 
 #### T4 — Force generators · agent `forces` · `progress/forces.md`
@@ -85,7 +85,7 @@ solve velocities (iterated) → integrate velocities → correct positions (iter
 - [ ] SpringGenerator (between two bodies), AnchoredSpringGenerator
 - [ ] PointGravityGenerator (attractor), BuoyancyGenerator, WindGenerator
 - [ ] Tests: `tests/.../ForceGeneratorTests.cs`
-- Files owned: `src/PhysicsEngine/Forces/*.cs` (new files), test file.
+- Files owned: `src/Impulse2D/Forces/*.cs` (new files), test file.
 - Status: 🟡 dispatched (worktree `physics-wt-forces`, branch `forces`)
 
 #### T5 — Visual demo + scenarios · `progress/demo.md`
@@ -94,7 +94,7 @@ solve velocities (iterated) → integrate velocities → correct positions (iter
 - [x] Interactive: spawn shapes on click, pause/step, switch scenario
 - [x] `--headless N` mode: steps a scenario without a window and prints state (for CI/QA)
 - [x] README with run instructions
-- Files owned: everything under `demo/PhysicsEngine.Demo/` (Program.cs, Renderer.cs, Scenarios.cs, etc.).
+- Files owned: everything under `demo/Impulse2D.Demo/` (Program.cs, Renderer.cs, Scenarios.cs, etc.).
 - Status: ✅ done (built by orchestrator; demo agent hit session limit). Headless QA + 6s windowed run verified.
 
 ### Phase 2 — Integration QA (owner: orchestrator) ✅
@@ -140,7 +140,15 @@ Triggered by a user-reported edge case (rapid same-point spawns behaving oddly).
 
 ---
 
+## Phase 5 — Rename PhysicsEngine → Impulse2D (branch `refactor/rename-to-impulse2d`) ✅
+- [x] Renamed dirs/projects: `src/Impulse2D`, `tests/Impulse2D.Tests`, `demo/Impulse2D.Demo`; `Impulse2D.sln`.
+- [x] Namespace/usings `PhysicsEngine` → `Impulse2D` across all `.cs`; assemblies are now `Impulse2D*`.
+- [x] All docs (README, demo/README, `docs/AGENT_REFERENCE.md`, Docusaurus, PLAN/QA/progress) retargeted.
+- [x] Zero remaining `PhysicsEngine` tokens. Build 0 warnings, **127 tests**, demo + Docusaurus build clean.
+
+---
+
 ## Resume notes
 If interrupted: re-read this board + each `progress/*.md` + `QA_REPORT.md`. Everything is
-committed and builds. `dotnet test PhysicsEngine.sln` must stay green (119 tests); the demo
+committed and builds. `dotnet test Impulse2D.sln` must stay green (127 tests); the demo
 runs windowed or `--headless`. Docs live in `docs/AGENT_REFERENCE.md` and `website/`.

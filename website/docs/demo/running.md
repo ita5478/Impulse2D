@@ -5,13 +5,13 @@ title: Running the Demo
 
 # The demo
 
-`demo/PhysicsEngine.Demo` is a Raylib visualization of the engine, plus a headless
+`demo/Impulse2D.Demo` is a Raylib visualization of the engine, plus a headless
 scenario runner that doubles as a CI smoke test.
 
 ## Run the interactive window
 
 ```bash
-dotnet run --project demo/PhysicsEngine.Demo
+dotnet run --project demo/Impulse2D.Demo
 ```
 
 A 1280×720 window opens on the `ground-drop` scene. Static bodies are drawn grey, dynamic
@@ -39,16 +39,16 @@ it works as a smoke test.
 
 ```bash
 # Run a named scenario for N steps.
-dotnet run --project demo/PhysicsEngine.Demo -- --headless <scenario> <steps>
+dotnet run --project demo/Impulse2D.Demo -- --headless <scenario> <steps>
 
 # List the available scenarios.
-dotnet run --project demo/PhysicsEngine.Demo -- --headless list
+dotnet run --project demo/Impulse2D.Demo -- --headless list
 ```
 
 Example:
 
 ```bash
-dotnet run --project demo/PhysicsEngine.Demo -- --headless ground-drop 360
+dotnet run --project demo/Impulse2D.Demo -- --headless ground-drop 360
 ```
 
 If `<steps>` is omitted it defaults to 600; an unknown scenario name exits with code `2`.
@@ -65,7 +65,7 @@ If `<steps>` is omitted it defaults to 600; an unknown scenario name exits with 
 | `attractor` | Bodies orbiting a central gravity well, with world gravity disabled. |
 
 Each scenario's `Build` method returns a fully populated `World`, so resetting is just a
-rebuild. The scenario source (`demo/PhysicsEngine.Demo/Scenarios.cs`) is a good gallery of
+rebuild. The scenario source (`demo/Impulse2D.Demo/Scenarios.cs`) is a good gallery of
 idiomatic engine usage — the [recipes](../recipes/bouncing-balls.md) are distilled from
 it.
 
