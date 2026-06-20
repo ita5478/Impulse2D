@@ -88,21 +88,21 @@ solve velocities (iterated) → integrate velocities → correct positions (iter
 - Files owned: `src/PhysicsEngine/Forces/*.cs` (new files), test file.
 - Status: 🟡 dispatched (worktree `physics-wt-forces`, branch `forces`)
 
-#### T5 — Visual demo + scenarios · agent `demo` · `progress/demo.md`
-- [ ] Raylib renderer (circles, polygons, contacts, HUD), world→screen camera
-- [ ] Scenarios: falling stack, bouncing balls, pyramid, springs, mixed shapes, attractor
-- [ ] Interactive: spawn shapes on click, pause/step, switch scenario
-- [ ] `--headless N` mode: steps a scenario without a window and prints state (for CI/QA)
-- [ ] README with run instructions
+#### T5 — Visual demo + scenarios · `progress/demo.md`
+- [x] Raylib renderer (circles, polygons, contacts, HUD), world→screen camera
+- [x] Scenarios: ground-drop, bouncing balls, pyramid, springs, mixed shapes, attractor
+- [x] Interactive: spawn shapes on click, pause/step, switch scenario
+- [x] `--headless N` mode: steps a scenario without a window and prints state (for CI/QA)
+- [x] README with run instructions
 - Files owned: everything under `demo/PhysicsEngine.Demo/` (Program.cs, Renderer.cs, Scenarios.cs, etc.).
-- Status: ⬜
+- Status: ✅ done (built by orchestrator; demo agent hit session limit). Headless QA + 6s windowed run verified.
 
-### Phase 2 — Integration QA (owner: orchestrator) ⬜
-- [ ] `dotnet build` whole solution clean
-- [ ] `dotnet test` all green
-- [ ] Integration scenarios: momentum conservation, resting stability, no tunneling, energy bounds
-- [ ] Run demo headless; sanity-check trajectories
-- [ ] Root README
+### Phase 2 — Integration QA (owner: orchestrator) ✅
+- [x] `dotnet build` whole solution clean (0 warnings)
+- [x] `dotnet test` all green — **99 tests**
+- [x] Integration scenarios: momentum conservation, resting stability, no tunneling, energy bounds (`tests/.../IntegrationTests.cs`, 6 tests)
+- [x] Run demo headless; sanity-check trajectories (all 6 scenarios stable, no NaN/Inf)
+- [x] Root README + demo README
 
 ---
 
