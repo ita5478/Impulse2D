@@ -1,7 +1,11 @@
-# PhysicsEngine
+# Impulse2D
 
 A small, dependency-free **2D rigid-body physics engine** for C# / .NET 9, designed to be
-used as a library in games, plus a Raylib visual demo.
+used as a library in games, plus a Raylib visual demo. Named for its impulse-based contact
+solver.
+
+> The C# namespace and solution are currently `PhysicsEngine`; a rename to `Impulse2D` is
+> tracked as a follow-up branch.
 
 It supports circles and arbitrary **convex polygons** (boxes included), impulse-based
 collision response with restitution and Coulomb friction, a pluggable broad phase, and a
