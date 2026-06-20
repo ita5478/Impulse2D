@@ -224,18 +224,21 @@ public static class CollisionDetector
         // Collision normal: reference face normal. If reference is B, flip so it points A->B.
         Vector2 normal = flip ? -refNormal : refNormal;
 
-        float totalPen = 0f;
+        // BUG-7 fix: report the DEEPEST per-contact penetration, not the average. The solver
+        // relies on m.Penetration being a single deepest-depth value so deep overlaps are
+        // corrected by the true maximum depth rather than an under-reported mean.
+        float maxPen = 0f;
         int found = 0;
         if (sep1 <= 0f)
         {
             m.AddContact(p1);
-            totalPen += -sep1;
+            maxPen = MathF.Max(maxPen, -sep1);
             found++;
         }
         if (sep2 <= 0f)
         {
             m.AddContact(p2);
-            totalPen += -sep2;
+            maxPen = MathF.Max(maxPen, -sep2);
             found++;
         }
 
@@ -243,7 +246,7 @@ public static class CollisionDetector
             return false;
 
         m.Normal = normal;
-        m.Penetration = totalPen / found;
+        m.Penetration = maxPen;
         return true;
     }
 

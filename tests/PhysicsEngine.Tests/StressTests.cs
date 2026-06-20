@@ -209,7 +209,7 @@ public class StressTests
     /// BUG-6: A degenerate (collinear) polygon yields NaN inertia and NaN centroid from
     /// <see cref="PolygonShape.ComputeMass"/> (area == 0 → divide by zero).
     /// </summary>
-    [Fact(Skip = "BUG-6: see QA_REPORT.md")]
+    [Fact]
     public void Degenerate_CollinearPolygon_MassDataFinite()
     {
         var verts = new[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(2, 0) }; // collinear
@@ -466,7 +466,7 @@ public class StressTests
     /// the averaged value under-reports the true maximum penetration and the solver under-corrects.
     /// This averaging is also a contributing factor to BUG-1 (deep piles never fully separate).
     /// </summary>
-    [Fact(Skip = "BUG-7: see QA_REPORT.md")]
+    [Fact]
     public void PolyVsPoly_DeepPenetration_ReportsDeepestNotAverage()
     {
         // Two boxes overlapping with a rotation so the two clipped contacts differ in depth.

@@ -103,6 +103,12 @@ public sealed class PolygonShape : Shape
             inertia += (0.25f * inv3 * cross) * (intx2 + inty2);
         }
 
+        // BUG-6 guard: a degenerate (collinear / zero-area) hull has area ~= 0. Dividing the
+        // centroid by it produces NaN, which then poisons the inertia term. Return a finite,
+        // zeroed MassData instead so callers never see NaN/Inf for such inputs.
+        if (MathF.Abs(area) < MathUtils.Epsilon)
+            return new MassData(0f, Vector2.Zero, 0f);
+
         centroid /= area;
         float mass = density * area;
         // Shift inertia from the origin to the centroid (parallel axis theorem).
