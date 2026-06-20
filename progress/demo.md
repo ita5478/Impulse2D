@@ -10,10 +10,10 @@ Status: ✅ done
 - [x] README
 
 ## Files
-- `demo/PhysicsEngine.Demo/Camera.cs` — meters↔pixels mapping.
-- `demo/PhysicsEngine.Demo/Scenarios.cs` — 6-scenario registry, arena helpers.
-- `demo/PhysicsEngine.Demo/Renderer.cs` — Raylib drawing (circles, polygons, contacts, HUD). Colors via `new Color(int,int,int,int)`.
-- `demo/PhysicsEngine.Demo/Program.cs` — arg parsing; headless runner (no Raylib) + windowed loop with input.
+- `demo/Impulse2D.Demo/Camera.cs` — meters↔pixels mapping.
+- `demo/Impulse2D.Demo/Scenarios.cs` — 6-scenario registry, arena helpers.
+- `demo/Impulse2D.Demo/Renderer.cs` — Raylib drawing (circles, polygons, contacts, HUD). Colors via `new Color(int,int,int,int)`.
+- `demo/Impulse2D.Demo/Program.cs` — arg parsing; headless runner (no Raylib) + windowed loop with input.
 - `demo/README.md`.
 
 ## QA performed (headless, no display needed)
@@ -27,6 +27,6 @@ Status: ✅ done
 - Windowed run: launched the real window for 6s — raylib 6.0 initialized all modules, render loop ran, no errors.
 
 ## Notes
-- Raylib-cs 8.0.0. Raylib uses `System.Numerics.Vector2`; aliased as `NVector2` and converted at draw sites to keep `PhysicsEngine.Vector2` unambiguous.
+- Raylib-cs 8.0.0. Raylib uses `System.Numerics.Vector2`; aliased as `NVector2` and converted at draw sites to keep `Impulse2D.Vector2` unambiguous.
 - Headless path never references Raylib, so the native lib is not loaded there (CI-safe).
 - `GetFPS` (caps), `MouseButton.Left`, PascalCase `KeyboardKey` confirmed against the package XML.

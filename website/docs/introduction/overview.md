@@ -4,9 +4,9 @@ title: Overview
 slug: /introduction/overview
 ---
 
-# PhysicsEngine
+# Impulse2D
 
-**PhysicsEngine** is a small, dependency-free **2D rigid-body physics engine** for
+**Impulse2D** is a small, dependency-free **2D rigid-body physics engine** for
 C# / .NET 9, designed to be used as a library in games. It ships with a Raylib visual
 demo and a headless scenario runner.
 
@@ -50,14 +50,14 @@ set of force generators (gravity, drag, springs, attractors, buoyancy, wind).
 
 | Project | Description |
 |---|---|
-| `src/PhysicsEngine` | The engine library (no third-party dependencies). |
-| `tests/PhysicsEngine.Tests` | xUnit suite — unit + full-pipeline integration tests. |
-| `demo/PhysicsEngine.Demo` | Raylib visualization + headless scenario runner. |
+| `src/Impulse2D` | The engine library (no third-party dependencies). |
+| `tests/Impulse2D.Tests` | xUnit suite — unit + full-pipeline integration tests. |
+| `demo/Impulse2D.Demo` | Raylib visualization + headless scenario runner. |
 
 ## A taste of the API
 
 ```csharp
-using PhysicsEngine;
+using Impulse2D;
 
 var world = new World(gravity: new Vector2(0f, 9.81f)); // Y is down
 

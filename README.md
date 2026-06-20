@@ -2,10 +2,7 @@
 
 A small, dependency-free **2D rigid-body physics engine** for C# / .NET 9, designed to be
 used as a library in games, plus a Raylib visual demo. Named for its impulse-based contact
-solver.
-
-> The C# namespace and solution are currently `PhysicsEngine`; a rename to `Impulse2D` is
-> tracked as a follow-up branch.
+solver. The C# namespace, solution, and assemblies are all `Impulse2D`.
 
 It supports circles and arbitrary **convex polygons** (boxes included), impulse-based
 collision response with restitution and Coulomb friction, a pluggable broad phase, and a
@@ -26,14 +23,14 @@ set of force generators (gravity, drag, springs, attractors, buoyancy, wind).
 ## Projects
 | Project | Description |
 |---|---|
-| `src/PhysicsEngine` | The engine library (no third-party dependencies). |
-| `tests/PhysicsEngine.Tests` | xUnit suite — 99 tests (unit + full-pipeline integration). |
-| `demo/PhysicsEngine.Demo` | Raylib visualization + headless scenario runner. See [demo/README.md](demo/README.md). |
+| `src/Impulse2D` | The engine library (no third-party dependencies). |
+| `tests/Impulse2D.Tests` | xUnit suite — 99 tests (unit + full-pipeline integration). |
+| `demo/Impulse2D.Demo` | Raylib visualization + headless scenario runner. See [demo/README.md](demo/README.md). |
 
 ## Quick start
 
 ```csharp
-using PhysicsEngine;
+using Impulse2D;
 
 var world = new World(gravity: new Vector2(0f, 9.81f)); // Y is down
 
@@ -72,10 +69,10 @@ world.BroadPhase = new SpatialHashBroadPhase(cellSize: 2f); // or SweepAndPruneB
 ## Build & test
 
 ```bash
-dotnet build PhysicsEngine.sln
-dotnet test  PhysicsEngine.sln      # 99 tests
-dotnet run --project demo/PhysicsEngine.Demo                       # visual demo
-dotnet run --project demo/PhysicsEngine.Demo -- --headless list    # list demo scenarios
+dotnet build Impulse2D.sln
+dotnet test  Impulse2D.sln      # 99 tests
+dotnet run --project demo/Impulse2D.Demo                       # visual demo
+dotnet run --project demo/Impulse2D.Demo -- --headless list    # list demo scenarios
 ```
 
 ## Conventions & limitations

@@ -10,7 +10,7 @@ each body a tangential velocity and it orbits instead of falling straight in —
 engine's `attractor` demo.
 
 ```csharp
-using PhysicsEngine;
+using Impulse2D;
 
 // No global gravity — the attractor is the only force.
 var world = new World(Vector2.Zero);

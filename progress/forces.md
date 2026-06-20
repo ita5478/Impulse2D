@@ -10,7 +10,7 @@ Status: ✅ done
 - [x] Tests pass (20/20 green)
 
 ## Summary
-Implemented 7 force generators under `src/PhysicsEngine/Forces/`, one class per file,
+Implemented 7 force generators under `src/Impulse2D/Forces/`, one class per file,
 all XML-doc'd and matching the foundation style. All apply forces only via
 `body.ApplyForce*` and skip non-dynamic bodies and zero-length edge cases.
 
@@ -24,7 +24,7 @@ all XML-doc'd and matching the foundation style. All apply forces only via
 - **BuoyancyGenerator** — depth-proportional lift + optional vertical drag.
 - **WindGenerator** — `dragCoefficient · (windVelocity - v)`.
 
-Tests in `tests/PhysicsEngine.Tests/ForceGeneratorTests.cs` call `Apply` directly and
+Tests in `tests/Impulse2D.Tests/ForceGeneratorTests.cs` call `Apply` directly and
 assert `body.Force` against the formula (never call `world.Step()`).
 
 ## Caveats

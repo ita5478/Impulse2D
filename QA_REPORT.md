@@ -3,7 +3,7 @@
 Date: 2026-06-20
 Scope: read-only investigation. No `src/` or demo files were modified. All findings are
 backed by deterministic, reproducible tests in
-`tests/PhysicsEngine.Tests/StressTests.cs`.
+`tests/Impulse2D.Tests/StressTests.cs`.
 
 Test suite status: **GREEN** — `dotnet test` → 112 passed, **7 skipped (one per open bug)**,
 0 failed. Each skipped test preserves the failing assertion and is tagged `BUG-n` so a fixer
@@ -29,7 +29,7 @@ can un-skip and verify.
 Conventions confirmed from source: Y grows DOWNWARD; default gravity `(0, +9.81)`; fixed
 timestep via `World.Step(dt)`; step pipeline is forces → integrate-forces → broad/narrow phase
 → iterated velocity solve → integrate-velocity → iterated positional correction → clear forces
-(`src/PhysicsEngine/World.cs:67`).
+(`src/Impulse2D/World.cs:67`).
 
 ---
 
@@ -55,7 +55,7 @@ overlap, coincident-box finite manifold, and all degenerate force-generator conf
 
 ## Grouped issues
 
-### Solver — `src/PhysicsEngine/Dynamics/Solver/CollisionResolver.cs` (+ `WorldSettings.cs`)
+### Solver — `src/Impulse2D/Dynamics/Solver/CollisionResolver.cs` (+ `WorldSettings.cs`)
 
 #### BUG-1 — Coincident box piles explode and tunnel through static ground  *(critical)*
 - **Repro** (`StressTests.Spawn_ManyCoincidentBoxes_DoNotExplodeOrTunnel`): 9 boxes
@@ -135,7 +135,7 @@ overlap, coincident-box finite manifold, and all degenerate force-generator conf
   (before iterating), apply it as a velocity bias, and lower / make-relative the restitution
   threshold (e.g. scale by `gravity*dt`). Verify with this test un-skipped.
 
-### Collision — `src/PhysicsEngine/Collision/CollisionDetector.cs`
+### Collision — `src/Impulse2D/Collision/CollisionDetector.cs`
 
 #### BUG-7 — PolygonVsPolygon penetration is the average, not the deepest  *(minor)*
 - **Repro** (`StressTests.PolyVsPoly_DeepPenetration_ReportsDeepestNotAverage`): two unit boxes
@@ -150,7 +150,7 @@ overlap, coincident-box finite manifold, and all degenerate force-generator conf
 - **Suggested fix**: report `max(-sep_i)` (deepest) for `m.Penetration`, or store per-contact
   separations on the manifold and correct each contact independently.
 
-### Shapes — `src/PhysicsEngine/Shapes/PolygonShape.cs`
+### Shapes — `src/Impulse2D/Shapes/PolygonShape.cs`
 
 #### BUG-6 — Degenerate polygon → NaN inertia / NaN centroid  *(minor)*
 - **Repro** (`StressTests.Degenerate_CollinearPolygon_MassDataFinite`): `PolygonShape` built
@@ -168,7 +168,7 @@ overlap, coincident-box finite manifold, and all degenerate force-generator conf
   builder already collapses such inputs to 2 vertices — it could reject `< 3` resulting hull
   vertices.
 
-### World / Integrator — `src/PhysicsEngine/World.cs`, `Dynamics/Solver/Integrator.cs`
+### World / Integrator — `src/Impulse2D/World.cs`, `Dynamics/Solver/Integrator.cs`
 
 #### BUG-5 — Tunnelling at high speed (no CCD, no velocity clamp)  *(major / inherent limitation)*
 - **Repro** (`StressTests.Tunneling_FastBody_ShouldNotPassThinWall`): circle `r=0.2` fired at a

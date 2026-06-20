@@ -9,7 +9,7 @@ Stacks are the classic stress test for an impulse solver. This builds a pyramid 
 and raises the velocity iterations so it settles cleanly — the engine's `pyramid` demo.
 
 ```csharp
-using PhysicsEngine;
+using Impulse2D;
 
 var world = new World(new Vector2(0f, 9.81f));
 

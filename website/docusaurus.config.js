@@ -12,7 +12,7 @@ const GITHUB_URL = 'https://github.com/your-org/physics-engine';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'PhysicsEngine',
+  title: 'Impulse2D',
   tagline: 'A small, dependency-free 2D rigid-body physics engine for C# / .NET 9',
   favicon: 'img/favicon.ico',
 
@@ -67,9 +67,9 @@ const config = {
         respectPrefersColorScheme: true,
       },
       navbar: {
-        title: 'PhysicsEngine',
+        title: 'Impulse2D',
         logo: {
-          alt: 'PhysicsEngine Logo',
+          alt: 'Impulse2D Logo',
           src: 'img/logo.svg',
         },
         items: [
@@ -118,7 +118,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} PhysicsEngine. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} Impulse2D. Built with Docusaurus.`,
       },
       prism: {
         theme: prismThemes.github,

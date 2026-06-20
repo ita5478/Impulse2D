@@ -1,11 +1,11 @@
-# PhysicsEngine.Demo
+# Impulse2D.Demo
 
-A Raylib visual demonstration of the `PhysicsEngine` library.
+A Raylib visual demonstration of the `Impulse2D` library.
 
 ## Run (interactive window)
 
 ```bash
-dotnet run --project demo/PhysicsEngine.Demo
+dotnet run --project demo/Impulse2D.Demo
 ```
 
 A 1280×720 window opens on the `ground-drop` scene.
@@ -28,14 +28,14 @@ contact points from the last solver step.
 ## Run (headless — no window, for CI / QA)
 
 ```bash
-dotnet run --project demo/PhysicsEngine.Demo -- --headless <scenario> <steps>
-dotnet run --project demo/PhysicsEngine.Demo -- --headless list
+dotnet run --project demo/Impulse2D.Demo -- --headless <scenario> <steps>
+dotnet run --project demo/Impulse2D.Demo -- --headless list
 ```
 
 Example:
 
 ```bash
-dotnet run --project demo/PhysicsEngine.Demo -- --headless ground-drop 360
+dotnet run --project demo/Impulse2D.Demo -- --headless ground-drop 360
 ```
 
 Headless mode steps the simulation without loading Raylib and prints a trace of a few

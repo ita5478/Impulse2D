@@ -1,7 +1,7 @@
 // @ts-check
 
 /**
- * Explicit sidebar for the PhysicsEngine documentation.
+ * Explicit sidebar for the Impulse2D documentation.
  * The information architecture mirrors the engine's modules.
  *
  * @type {import('@docusaurus/plugin-content-docs').SidebarsConfig}
