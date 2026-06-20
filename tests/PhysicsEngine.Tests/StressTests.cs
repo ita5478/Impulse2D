@@ -68,7 +68,7 @@ public class StressTests
     /// Repro: 9 boxes (hw=hh=0.5) created at (0, 8.4) above a static ground top at y=9; 60Hz.
     /// Measured: globalMaxSpeed ~147 m/s, 3 boxes end at y~1118 (below ground bottom y=11).
     /// </summary>
-    [Fact(Skip = "BUG-1: see QA_REPORT.md")]
+    [Fact]
     public void Spawn_ManyCoincidentBoxes_DoNotExplodeOrTunnel()
     {
         var world = new World(new Vector2(0f, 9.81f));
@@ -136,7 +136,7 @@ public class StressTests
     /// BUG-5 (limitation): tunnelling begins at ~70 m/s (per-step displacement 1.17 vs wall+radius
     /// span 0.25). No CCD and no max-velocity clamp, so a fast body skips the wall entirely.
     /// </summary>
-    [Fact(Skip = "BUG-5: see QA_REPORT.md")]
+    [Fact]
     public void Tunneling_FastBody_ShouldNotPassThinWall()
     {
         var world = new World(Vector2.Zero);
@@ -229,7 +229,7 @@ public class StressTests
     /// the light box is squeezed out the top so the two swap vertical order (light ends ABOVE
     /// heavy), and during the transient the light box is driven below the ground plane.
     /// </summary>
-    [Fact(Skip = "BUG-3: see QA_REPORT.md")]
+    [Fact]
     public void MassRatio_HeavyOnLight_LightNotCrushedOrEjected()
     {
         var world = new World(new Vector2(0f, 9.81f));
@@ -262,7 +262,7 @@ public class StressTests
     /// Repro: 10 boxes (hw=hh=0.5) at x=0 stacked on a ground top y=19; 12 velocity iters; 20 s.
     /// Measured: max |x| ~5-6 units (should be < ~0.5).
     /// </summary>
-    [Fact(Skip = "BUG-2: see QA_REPORT.md")]
+    [Fact]
     public void TallStack_TenBoxes_DoesNotDriftSideways()
     {
         var world = new World(new Vector2(0f, 9.81f));
@@ -330,7 +330,7 @@ public class StressTests
     /// the resting-velocity restitution suppression and per-contact impulse handling kills the
     /// bounce so a "perfectly elastic" ball dies almost immediately.
     /// </summary>
-    [Fact(Skip = "BUG-4: see QA_REPORT.md")]
+    [Fact]
     public void Restitution_One_RoughlyConservesEnergy()
     {
         var world = new World(new Vector2(0f, 9.81f));

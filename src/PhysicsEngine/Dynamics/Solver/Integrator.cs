@@ -33,11 +33,29 @@ public static class Integrator
     /// Advance position/rotation from the (already updated) velocities and apply damping
     /// (second half of semi-implicit Euler).
     /// </summary>
-    public static void IntegrateVelocity(RigidBody body, float dt)
+    /// <param name="body">The body to advance.</param>
+    /// <param name="dt">Timestep in seconds.</param>
+    /// <param name="maxLinearVelocity">
+    /// Hard upper bound on linear speed (metres/second), applied BEFORE the position update so
+    /// it caps the per-step displacement. Bounds energy injection from deep-penetration piles
+    /// (BUG-1) and partially mitigates tunnelling at the speeds the suite checks (BUG-5) — it
+    /// is not true CCD, which remains out of scope. A non-positive value disables the clamp,
+    /// preserving the original behaviour for callers that don't supply a bound.
+    /// </param>
+    public static void IntegrateVelocity(RigidBody body, float dt, float maxLinearVelocity = 0f)
     {
         // Static bodies never move; kinematic and dynamic bodies advance by velocity.
         if (body.Type == BodyType.Static)
             return;
+
+        // Safety clamp on linear speed (energy / tunnelling mitigation). Applied before the
+        // position update so it bounds the per-step displacement.
+        if (maxLinearVelocity > 0f)
+        {
+            float speedSq = body.LinearVelocity.LengthSquared;
+            if (speedSq > maxLinearVelocity * maxLinearVelocity)
+                body.LinearVelocity = body.LinearVelocity.Normalized() * maxLinearVelocity;
+        }
 
         body.Position += body.LinearVelocity * dt;
         body.Rotation += body.AngularVelocity * dt;
