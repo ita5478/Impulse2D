@@ -15,6 +15,33 @@ public sealed class World
     private readonly List<IForceGenerator> _forceGenerators = new();
     private readonly List<Manifold> _contacts = new();
 
+    // Persistent accumulated impulses, keyed by the ordered body pair, used to warm-start the
+    // velocity solver from the previous step's solution. Warm-starting is what makes tall stacks
+    // stable in a bounded iteration count (BUG-2). Two ping-ponged dictionaries avoid per-step
+    // allocation: read from previous, write into current, then swap.
+    private Dictionary<(RigidBody, RigidBody), ContactImpulse> _prevImpulses
+        = new(PairComparer.Instance);
+    private Dictionary<(RigidBody, RigidBody), ContactImpulse> _curImpulses
+        = new(PairComparer.Instance);
+
+    private readonly struct ContactImpulse
+    {
+        public readonly float N0, N1, T0, T1;
+        public ContactImpulse(float n0, float n1, float t0, float t1) { N0 = n0; N1 = n1; T0 = t0; T1 = t1; }
+    }
+
+    // Reference-identity comparer for the ordered (A,B) body pair key.
+    private sealed class PairComparer : IEqualityComparer<(RigidBody, RigidBody)>
+    {
+        public static readonly PairComparer Instance = new();
+        public bool Equals((RigidBody, RigidBody) x, (RigidBody, RigidBody) y)
+            => ReferenceEquals(x.Item1, y.Item1) && ReferenceEquals(x.Item2, y.Item2);
+        public int GetHashCode((RigidBody, RigidBody) k)
+            => System.HashCode.Combine(
+                System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(k.Item1),
+                System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(k.Item2));
+    }
+
     public Vector2 Gravity;
     public WorldSettings Settings { get; }
     public IBroadPhase BroadPhase { get; set; }
@@ -53,6 +80,8 @@ public sealed class World
         _bodies.Clear();
         _forceGenerators.Clear();
         _contacts.Clear();
+        _prevImpulses.Clear();
+        _curImpulses.Clear();
     }
 
     // --- Convenience factory helpers ---
@@ -86,7 +115,32 @@ public sealed class World
                 _contacts.Add(manifold);
         }
 
-        // 5. Velocity solver (iterated).
+        // 5a. Prepare each contact ONCE per step (cache materials, capture restitution bias
+        // from the initial approach velocity, reset accumulated impulses), then seed the
+        // accumulated impulses from the previous step's solution and warm-start.
+        for (int i = 0; i < _contacts.Count; i++)
+        {
+            Manifold m = _contacts[i];
+            CollisionResolver.Prepare(ref m, Settings, dt);
+
+            // Warm-start from the previous step's accumulated impulses for this body pair.
+            // Only the normal impulse is carried over (scaled): it is the load-bearing component
+            // and is far less sensitive to small contact-point shifts than friction, so it seeds
+            // stack support without the energy pumping that stale tangent impulses cause.
+            if (Settings.WarmStarting &&
+                _prevImpulses.TryGetValue((m.A, m.B), out ContactImpulse prev))
+            {
+                m.NormalImpulse0 = prev.N0 * Settings.WarmStartFactor;
+                m.NormalImpulse1 = prev.N1 * Settings.WarmStartFactor;
+                m.TangentImpulse0 = 0f;
+                m.TangentImpulse1 = 0f;
+                CollisionResolver.WarmStart(ref m);
+            }
+
+            _contacts[i] = m;
+        }
+
+        // 5b. Velocity solver (iterated, accumulated impulses).
         for (int it = 0; it < Settings.VelocityIterations; it++)
         {
             for (int i = 0; i < _contacts.Count; i++)
@@ -97,9 +151,22 @@ public sealed class World
             }
         }
 
-        // 6. Integrate velocities into positions.
+        // 5c. Persist this step's accumulated impulses for next-step warm-starting.
+        _curImpulses.Clear();
+        if (Settings.WarmStarting)
+        {
+            for (int i = 0; i < _contacts.Count; i++)
+            {
+                Manifold m = _contacts[i];
+                _curImpulses[(m.A, m.B)] = new ContactImpulse(
+                    m.NormalImpulse0, m.NormalImpulse1, m.TangentImpulse0, m.TangentImpulse1);
+            }
+        }
+        (_prevImpulses, _curImpulses) = (_curImpulses, _prevImpulses);
+
+        // 6. Integrate velocities into positions (with the max-velocity safety clamp).
         for (int i = 0; i < _bodies.Count; i++)
-            Integrator.IntegrateVelocity(_bodies[i], dt);
+            Integrator.IntegrateVelocity(_bodies[i], dt, Settings.MaxLinearVelocity);
 
         // 7. Positional correction (iterated).
         for (int it = 0; it < Settings.PositionIterations; it++)
