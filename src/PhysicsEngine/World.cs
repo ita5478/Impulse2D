@@ -92,12 +92,71 @@ public sealed class World
     public RigidBody CreateBox(Vector2 position, float halfWidth, float halfHeight, BodyType type = BodyType.Dynamic, Material? material = null)
         => Add(new RigidBody(PolygonShape.CreateBox(halfWidth, halfHeight), material ?? Material.Default, type, position));
 
-    /// <summary>Advance the simulation by <paramref name="dt"/> seconds.</summary>
+    /// <summary>
+    /// Number of CCD sub-steps the most recent <see cref="Step"/> call used (1 when nothing
+    /// moved fast enough to subdivide). Exposed for diagnostics/tests.
+    /// </summary>
+    public int LastSubStepCount { get; private set; } = 1;
+
+    /// <summary>
+    /// Advance the simulation by <paramref name="dt"/> seconds. When
+    /// <see cref="WorldSettings.ContinuousCollisionDetection"/> is enabled the step is
+    /// adaptively subdivided so no dynamic body moves more than
+    /// <see cref="WorldSettings.CcdMotionThreshold"/> of its size per sub-step, preventing
+    /// fast bodies from tunnelling through thin geometry. Each sub-step runs the full solver
+    /// pipeline with an equal slice of the timestep.
+    /// </summary>
     public void Step(float dt)
     {
         if (dt <= 0f)
             return;
 
+        int subSteps = Settings.ContinuousCollisionDetection ? ComputeSubStepCount(dt) : 1;
+        LastSubStepCount = subSteps;
+
+        float h = dt / subSteps;
+        for (int s = 0; s < subSteps; s++)
+            StepInternal(h);
+    }
+
+    /// <summary>
+    /// Decide how many equal sub-steps this <paramref name="dt"/> needs so that the fastest
+    /// dynamic body moves at most <see cref="WorldSettings.CcdMotionThreshold"/> of its bounding
+    /// radius per sub-step. Result is clamped to [1, <see cref="WorldSettings.MaxSubSteps"/>].
+    /// </summary>
+    private int ComputeSubStepCount(float dt)
+    {
+        float maxRatio = 0f;
+        for (int i = 0; i < _bodies.Count; i++)
+        {
+            RigidBody body = _bodies[i];
+            if (!body.IsDynamic)
+                continue;
+
+            float radius = body.Shape.BoundingRadius;
+            if (radius <= 0f)
+                continue;
+
+            // Estimate the displacement this step, including the gravity it is about to gain.
+            Vector2 endVelocity = body.LinearVelocity;
+            if (!body.IgnoreGravity)
+                endVelocity += Gravity * dt;
+            float displacement = endVelocity.Length * dt;
+
+            float ratio = displacement / (Settings.CcdMotionThreshold * radius);
+            if (ratio > maxRatio)
+                maxRatio = ratio;
+        }
+
+        int n = (int)MathF.Ceiling(maxRatio);
+        if (n < 1) n = 1;
+        if (n > Settings.MaxSubSteps) n = Settings.MaxSubSteps;
+        return n;
+    }
+
+    /// <summary>Run the full solver pipeline once for a (sub-)step of length <paramref name="dt"/>.</summary>
+    private void StepInternal(float dt)
+    {
         // 1. External force generators.
         for (int i = 0; i < _forceGenerators.Count; i++)
             _forceGenerators[i].Apply(this, dt);

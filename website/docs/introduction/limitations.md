@@ -8,17 +8,23 @@ title: Limitations
 PhysicsEngine is intentionally small. Knowing where it stops will save you debugging
 time.
 
-## No continuous collision detection (CCD)
+## Continuous collision detection is sub-step based
 
-Collision is detected discretely, once per step, by testing overlap of the *current*
-poses. There is **no continuous collision detection**, so a body moving fast enough to
-pass entirely through thin geometry in a single step can **tunnel** through it.
+Collision is detected discretely (overlap of the current poses), but `World.Step`
+includes **continuous collision detection via adaptive sub-stepping**, on by default: it
+subdivides the timestep so no body moves more than a fraction of its size per sub-step,
+which prevents fast bodies from tunnelling through thin geometry. Slow scenes run a single
+sub-step, so there is no cost when nothing moves fast. See
+[Tuning → CCD](../tuning/world-settings.md).
 
-Mitigations:
+This is sub-step CCD, **not** full swept-shape time-of-impact. A body fast enough to need
+more than `WorldSettings.MaxSubSteps` sub-steps in one frame can still tunnel.
 
-- Keep `dt` small (e.g. `1/60` or smaller) for fast-moving objects.
-- Make thin geometry **thick** relative to the maximum per-step displacement.
-- Cap the velocities of very fast bodies.
+Mitigations for extreme speeds:
+
+- Raise `WorldSettings.MaxSubSteps` (allows more sub-steps for very fast bodies).
+- Lower `WorldSettings.MaxLinearVelocity` to cap how fast bodies can go.
+- Keep `dt` small and/or make thin geometry thicker.
 
 ## Sequential-impulse solver
 

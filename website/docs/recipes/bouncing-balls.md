@@ -47,8 +47,9 @@ for (int step = 0; step < 600; step++)
 - `Material.Bouncy` has restitution `0.8`. Restitution mixes as the **maximum** of the
   colliding pair, so a bouncy ball keeps its bounce even against `Material.Default` walls
   (restitution `0.2`) — the livelier surface wins.
-- A fully enclosed arena keeps fast balls from escaping. With no CCD, very high launch
-  speeds could still tunnel through the thin walls — keep speeds reasonable or thicken the
-  walls. The `WorldSettings.MaxLinearVelocity` clamp (default `60`) also bounds this.
+- A fully enclosed arena keeps fast balls from escaping. Continuous collision detection
+  (on by default) keeps even fast balls from tunnelling through the thin walls by
+  sub-stepping the timestep; only speeds above the `WorldSettings.MaxSubSteps` budget can
+  still escape, so raise that cap (or lower `MaxLinearVelocity`) for very fast balls.
 - The `RestitutionVelocityThreshold` setting (default `1.0`) suppresses tiny bounces so
   balls eventually settle instead of buzzing on the floor.

@@ -28,6 +28,9 @@ world.Settings.PenetrationCorrection = 0.5f;
 | `RestitutionVelocityThreshold` | `1.0` | Relative speed below which restitution is suppressed (prevents resting jitter). |
 | `WarmStarting` | `false` | Seed the velocity solver from the previous step's accumulated impulses. |
 | `WarmStartFactor` | `1.0` | Fraction of the carried-over normal impulse applied when warm-starting. |
+| `ContinuousCollisionDetection` | `true` | Adaptive sub-stepping so fast bodies don't tunnel through thin geometry. |
+| `CcdMotionThreshold` | `0.5` | Max fraction of a body's radius it may move per sub-step before the step subdivides. |
+| `MaxSubSteps` | `8` | Hard cap on CCD sub-steps per `Step`, bounding worst-case cost. |
 
 ## How each one behaves
 
@@ -82,6 +85,29 @@ When enabled, the solver carries each contact's accumulated normal impulse into 
 step as a starting guess, which helps large stacks converge faster. It is **off by default**
 because the block solver already keeps ordinary stacks stable; enable it for very large
 piles if you see slow settling.
+
+### Continuous collision detection (CcdMotionThreshold, MaxSubSteps)
+
+`ContinuousCollisionDetection` (on by default) makes `World.Step` **adaptively subdivide**
+the timestep so the fastest body never moves more than `CcdMotionThreshold` of its bounding
+radius per sub-step. This is what stops a fast bullet from passing straight through a thin
+wall. The number of sub-steps a step actually used is exposed as `world.LastSubStepCount`.
+
+- **Slow scenes cost nothing:** if nothing moves fast, the step runs a single sub-step and
+  is identical to a plain step.
+- **`CcdMotionThreshold`** trades safety for cost: smaller values subdivide sooner (safer,
+  more sub-steps). `0.5` means "never move more than half a radius per sub-step".
+- **`MaxSubSteps`** caps the worst-case cost. A body fast enough to need more sub-steps than
+  this can still tunnel — raise the cap (or lower `MaxLinearVelocity`) for extreme speeds.
+
+```csharp
+// Make CCD more aggressive for a fast-paced shooter:
+world.Settings.CcdMotionThreshold = 0.25f; // subdivide sooner
+world.Settings.MaxSubSteps = 16;           // allow more sub-steps
+
+// Or turn it off entirely if all your bodies are slow and you want the cheapest step:
+world.Settings.ContinuousCollisionDetection = false;
+```
 
 ## Recipes
 

@@ -25,7 +25,7 @@
 
 - **Coordinates: Y grows DOWNWARD.** Default gravity is `(0, +9.81)` ([World ctor](src/PhysicsEngine/World.cs:38)). "Up" = negative Y. This pervades buoyancy sign logic.
 - **Units: meters, seconds, radians.** Angles always radians. Mass derived from density × area (density is mass/area, 2D).
-- **Fixed timestep is the caller's job.** `World.Step(dt)` integrates one step; it does not subdivide. Tests use `dt = 1/120`. `dt <= 0` is a no-op ([Step](src/PhysicsEngine/World.cs:69)). No CCD/substepping.
+- **Fixed timestep is the caller's job.** Call `World.Step(dt)` at a constant `dt` (tests use `1/120`); `dt <= 0` is a no-op. `Step` *does* internally subdivide for CCD (see pipeline), but the caller still owns the outer fixed timestep.
 - **Polygon winding: CCW.** Constructor rebuilds a convex hull and forces CCW ([BuildConvexHull](src/PhysicsEngine/Shapes/PolygonShape.cs:126)). Outward normal = right-hand perp `(edge.Y, -edge.X)` ([ComputeNormals](src/PhysicsEngine/Shapes/PolygonShape.cs:120)).
 - **Manifold normal points A→B**, unit length, penetration positive when overlapping ([Manifold](src/PhysicsEngine/Collision/Manifold.cs:8)). Every narrow-phase routine must honor this.
 - **Mutable vs derived on RigidBody:** mutable = `Position`, `Rotation`, `LinearVelocity`, `AngularVelocity`, `Force`, `Torque`, `LinearDamping`, `AngularDamping`, `IgnoreGravity`, `Tag`. Derived (private setters) = `Mass`, `InverseMass`, `Inertia`, `InverseInertia`, `LocalCenter` — recomputed only by `RecomputeMass`.
@@ -132,8 +132,10 @@ Contract ([IBroadPhase](src/PhysicsEngine/Collision/BroadPhase/IBroadPhase.cs:9)
 
 ## Solver
 
-### World.Step pipeline — [src/PhysicsEngine/World.cs:67](src/PhysicsEngine/World.cs:67)
-Order (cite [67-120](src/PhysicsEngine/World.cs:67)):
+### World.Step pipeline — [World.cs](src/PhysicsEngine/World.cs)
+`Step(dt)` is a **CCD wrapper**: when `Settings.ContinuousCollisionDetection` (default on) it calls `ComputeSubStepCount(dt)` (ceil of the fastest dynamic body's `|v|·dt / (CcdMotionThreshold·BoundingRadius)`, clamped to `[1, MaxSubSteps]`), then runs `StepInternal(dt/subSteps)` that many times. `LastSubStepCount` exposes the count. Slow scenes → 1 sub-step → identical to a plain step. `StepInternal` is the pipeline below.
+
+Order:
 1. Force generators `.Apply(this, dt)` — [73](src/PhysicsEngine/World.cs:73)
 2. `Integrator.IntegrateForces` (gravity + accumulated force → velocity) — [77](src/PhysicsEngine/World.cs:77)
 3. Broad phase `Build` + `FindPairs` — [82](src/PhysicsEngine/World.cs:82)
@@ -169,6 +171,9 @@ Semi-implicit (symplectic) Euler. `IntegrateForces`: non-dynamic early-return; `
 | `RestitutionVelocityThreshold` | 1.0 | below this closing speed, no bounce |
 | `WarmStarting` | false | seed solver from previous step's impulses |
 | `WarmStartFactor` | 1.0 | fraction of carried-over normal impulse |
+| `ContinuousCollisionDetection` | true | adaptive sub-stepping to stop fast-body tunnelling |
+| `CcdMotionThreshold` | 0.5 | max fraction of a body's radius travelled per sub-step before subdividing |
+| `MaxSubSteps` | 8 | hard cap on CCD sub-steps/Step (bounds cost; above it, tunnelling possible) |
 
 ## Forces
 
@@ -194,7 +199,7 @@ Contract: `IForceGenerator.Apply(World, dt)` [IForceGenerator:12](src/PhysicsEng
 
 ## Known limitations & gotchas
 
-- **No CCD.** Fast/thin bodies can still tunnel through thin static geometry above the `MaxLinearVelocity` regime. Mitigate with smaller `dt`, thicker walls, or a lower `MaxLinearVelocity`.
+- **CCD is sub-step-based, not swept-TOI.** Adaptive sub-stepping (on by default) stops fast bodies tunnelling, but a body fast enough to need more than `MaxSubSteps` sub-steps can still skip thin geometry. Mitigate by raising `MaxSubSteps`, lowering `MaxLinearVelocity`, smaller `dt`, or thicker walls. No swept-shape time-of-impact / speculative contacts.
 - **Stacks are stable** via the 2-point block solver + accumulated impulses; extreme towers may still need more `VelocityIterations`. (Historical BUG-2 — fixed.)
 - **Poly/poly penetration is the deepest contact depth** (BUG-7 fix) — used by positional correction.
 - **Spawn-overlap is bounded** (BUG-1 fix: `MaxCorrection` + `MaxLinearVelocity`). Heavily overlapping spawns separate gently instead of launching, but spawning separated is still cleaner.
@@ -219,3 +224,5 @@ Contract: `IForceGenerator.Apply(World, dt)` [IForceGenerator:12](src/PhysicsEng
 | [BroadPhaseTests](tests/PhysicsEngine.Tests/BroadPhaseTests.cs) | SpatialHash/SweepAndPrune vs BruteForce oracle |
 | [ForceGeneratorTests](tests/PhysicsEngine.Tests/ForceGeneratorTests.cs) | each generator's formula |
 | [IntegrationTests](tests/PhysicsEngine.Tests/IntegrationTests.cs) | full `World.Step` end-to-end (`dt=1/120`) |
+| [ContinuousCollisionTests](tests/PhysicsEngine.Tests/ContinuousCollisionTests.cs) | CCD sub-stepping: anti-tunnelling, sub-step counts, slow-scene invariance |
+| [StressTests](tests/PhysicsEngine.Tests/StressTests.cs) | adversarial QA suite (see `QA_REPORT.md`) |
