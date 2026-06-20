@@ -76,10 +76,11 @@ dotnet run --project demo/PhysicsEngine.Demo -- --headless list    # list demo s
 ## Conventions & limitations
 - **Y grows downward** (screen-space convention); default gravity is `(0, +9.81)`.
 - Fixed-timestep `World.Step(dt)`; call it at a constant `dt` (e.g. `1/60`).
-- The solver is a sequential-impulse ("Box2D-lite"-style) solver: great for typical game
-  scenes; very tall/heavy stacks can creep slightly. There is **no continuous collision
-  detection**, so extremely fast bodies can tunnel through thin geometry — keep `dt` small
-  or shapes thick for high-speed objects.
+- The solver is a sequential-impulse ("Box2D-lite"-style) solver with accumulated impulses
+  and a 2-point block solver, so box stacks stay stable. Deep spawn-overlaps are bounded by
+  `WorldSettings.MaxCorrection` / `MaxLinearVelocity`. There is still **no continuous
+  collision detection**, so extremely fast bodies can tunnel through thin geometry — keep
+  `dt` small, shapes thick, or `MaxLinearVelocity` low for high-speed objects.
 
 ## Project layout & history
 See [PLAN.md](PLAN.md) for the full task breakdown and module ownership. The engine was
